@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>
+#include <cstdlib>
 #include <sys/wait.h>
 
 using namespace std;
@@ -21,15 +22,22 @@ extern "C" {
   void abort(void) {
     std::cout << "\n\nabort()\n\n\n";
     h(1);
+    exit(1);
   }
 
-  void __assert_fail(const char* assertion, const char *, unsigned int line, const char* function)
+  void __assert_fail(const char* assertion, const char * file, unsigned int line, const char* function)
   {
+    (void) assertion;
+    (void) file;
+    (void) line;
+    (void) function;
     abort();
   }
     
-  void h(int)
+  void h(int p)
   {
+    (void) p;
+    
     int f = fork();
 
     if(f == 0) {
@@ -46,21 +54,22 @@ extern "C" {
       snprintf(exename, 100, "/proc/%d/exe", pidn);
       snprintf(pid, 10, "%d", pidn);
 
-      char * const args[4] = {
-        debugger,
-        exename,
-        pid,
-        0,
-      };
+      //char * const args[4] = {
+      //  debugger,
+      //  exename,
+      //  pid,
+      //  0,
+      //};
 
-      execlp(debugger, debugger, exename, pid, 0);
+      execlp(debugger, debugger, exename, pid, (char*)NULL);
 
       perror("Error");
       exit(1);
     }
     else if(f > 0) {
       volatile bool cont = false;
-      while(!cont);
+      while(!cont)
+        ;
       return;
     }
     else {
