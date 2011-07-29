@@ -33,6 +33,10 @@ struct ConstructorRunner
   }    
 };
 
+static char exename[100] = {0};
+static char pid[10] = {0};
+      
+
 
 extern "C" {
   /// This function gets called when the library determines that it
@@ -76,8 +80,6 @@ extern "C" {
 
     if(f == 0) {
       // Child. Spawn the debugger.
-      char exename[100] = {0};
-      char pid[10] = {0};
       int pidn= getppid();
 
       char* debugger = getenv("JITDEBUG_EXE");
