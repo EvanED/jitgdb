@@ -9,7 +9,6 @@
 // TODOs: - figure out how big the exename buffer should be
 //        - figure out how to call real abort() and replace exit(1)s
 //          with that
-//        - make functions static
 
 using namespace std;
 
@@ -101,7 +100,7 @@ extern "C" {
 
 
   /// Install all the signal handlers we need.
-  void install()
+  static void install()
   {
     sigset_t blocked;
     sigemptyset(&blocked);
@@ -151,4 +150,4 @@ static void execDebugger()
 }
 
 /// Call install() to set up all signal handlers.
-ConstructorRunner r(install);
+static ConstructorRunner r(install);
