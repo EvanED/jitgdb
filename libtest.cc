@@ -7,7 +7,6 @@
 #include <sys/wait.h>
 
 // TODOs: - figure out how big the exename buffer should be
-//        - break out 'start_debugger()' function
 //        - figure out how to call real abort() and replace exit(1)s
 //          with that
 //        - make functions static
@@ -37,6 +36,7 @@ static char exename[exename_len] = {0};
 static char pid[pid_len] = {0};
       
 
+static void execDebugger();
 
 extern "C" {
   /// This function gets called when the library determines that it
@@ -80,21 +80,7 @@ extern "C" {
 
     if(f == 0) {
       // Child. Spawn the debugger.
-      int pidn= getppid();
-
-      char* debugger = getenv("JITDEBUG_EXE");
-      if(!debugger) {
-        std::cout << "No debugger specified\n";
-        exit(0);
-      }
-
-      snprintf(exename, exename_len, "/proc/%d/exe", pidn);
-      snprintf(pid, pid_len, "%d", pidn);
-
-      execlp(debugger, debugger, exename, pid, (char*)NULL);
-
-      perror("Error");
-      exit(1);
+      execDebugger();
     }
     else if(f > 0) {
       // Enter an infinite loop. 'cont' is volatile so that the
@@ -144,6 +130,25 @@ extern "C" {
   }
 }
 
+
+static void execDebugger()
+{
+  int pidn= getppid();
+
+  char* debugger = getenv("JITDEBUG_EXE");
+  if(!debugger) {
+    std::cout << "No debugger specified\n";
+    exit(0);
+  }
+
+  snprintf(exename, exename_len, "/proc/%d/exe", pidn);
+  snprintf(pid, pid_len, "%d", pidn);
+
+  execlp(debugger, debugger, exename, pid, (char*)NULL);
+
+  perror("Error");
+  exit(1);
+}
 
 /// Call install() to set up all signal handlers.
 ConstructorRunner r(install);
