@@ -6,8 +6,7 @@
 #include <cstdlib>
 #include <sys/wait.h>
 
-// TODOs: - rename h()
-//        - move the exename buffer to static area
+// TODOs: - move the exename buffer to static area
 //        - figure out how big the exename buffer should be
 //        - make constants for both buffer lengths
 //        - break out 'start_debugger()' function
@@ -38,13 +37,13 @@ struct ConstructorRunner
 extern "C" {
   /// This function gets called when the library determines that it
   /// should spawn GDB.
-  void h(int);
+  static void gdbNaoPlz(int);
     
   /// We override libc's "abort()" so that we can trigger the JIT
   /// debugger then.
   void abort(void) {
     std::cout << "\n\nabort()\n\n\n";
-    h(1);
+    gdbNaoPlz(1);
     exit(1);
   }
 
@@ -63,7 +62,7 @@ extern "C" {
   }
     
 
-  void h(int p)
+  static void gdbNaoPlz(int p)
   {
     // When starting the debugger, we:
     //   1. fork()
@@ -126,7 +125,7 @@ extern "C" {
     sigaddset(&blocked, SIGFPE);
 
     struct sigaction sa;
-    sa.sa_handler = h;
+    sa.sa_handler = gdbNaoPlz;
     sa.sa_mask = blocked;
     sa.sa_flags = SA_RESTART;
 
