@@ -35,6 +35,7 @@ static char exename[exename_len] = {0};
 static char pid[pid_len] = {0};    
 
 static void execDebugger();
+static void doRealAbort();
 
 /// This function gets called when the library determines that it
 /// should spawn GDB.
@@ -64,11 +65,11 @@ static void gdbNaoPlz(int p)
   }
   else {
     std::cerr << "There was an error calling fork\n";
-    exit(1);
+    doRealAbort();
   }
 
   std::cout << "Version with f=" << f << " reached the end...\n";
-  exit(1);
+  doRealAbort();
 }
 
 
@@ -108,7 +109,7 @@ static void execDebugger()
   char* debugger = getenv("JITDEBUG_EXE");
   if(!debugger) {
     std::cout << "No debugger specified\n";
-    exit(0);
+    doRealAbort();
   }
 
   snprintf(exename, exename_len, "/proc/%d/exe", pidn);
@@ -117,8 +118,15 @@ static void execDebugger()
   execlp(debugger, debugger, exename, pid, (char*)NULL);
 
   perror("Error");
+  doRealAbort();
+}
+
+
+void doRealAbort()
+{
   exit(1);
 }
+
 
 /// Call install() to set up all signal handlers.
 static ConstructorRunner r(install);
@@ -134,7 +142,7 @@ extern "C" {
   void abort(void) {
     std::cout << "\n\nabort()\n\n\n";
     gdbNaoPlz(1);
-    exit(1);
+    doRealAbort();
   }
 
   /// This gets called behind the scenes by glic's 'assert()' macro
