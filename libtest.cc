@@ -6,9 +6,7 @@
 #include <cstdlib>
 #include <sys/wait.h>
 
-// TODOs: - move the exename buffer to static area
-//        - figure out how big the exename buffer should be
-//        - make constants for both buffer lengths
+// TODOs: - figure out how big the exename buffer should be
 //        - break out 'start_debugger()' function
 //        - figure out how to call real abort() and replace exit(1)s
 //          with that
@@ -33,8 +31,10 @@ struct ConstructorRunner
   }    
 };
 
-static char exename[100] = {0};
-static char pid[10] = {0};
+static const int exename_len = 100;
+static const int pid_len = 10;
+static char exename[exename_len] = {0};
+static char pid[pid_len] = {0};
       
 
 
@@ -88,8 +88,8 @@ extern "C" {
         exit(0);
       }
 
-      snprintf(exename, 100, "/proc/%d/exe", pidn);
-      snprintf(pid, 10, "%d", pidn);
+      snprintf(exename, exename_len, "/proc/%d/exe", pidn);
+      snprintf(pid, pid_len, "%d", pidn);
 
       execlp(debugger, debugger, exename, pid, (char*)NULL);
 
