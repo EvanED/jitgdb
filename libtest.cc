@@ -32,103 +32,74 @@ struct ConstructorRunner
 static const int exename_len = 100;
 static const int pid_len = 10;
 static char exename[exename_len] = {0};
-static char pid[pid_len] = {0};
-      
+static char pid[pid_len] = {0};    
 
 static void execDebugger();
 
-extern "C" {
-  /// This function gets called when the library determines that it
-  /// should spawn GDB.
-  static void gdbNaoPlz(int);
+/// This function gets called when the library determines that it
+/// should spawn GDB.
+static void gdbNaoPlz(int p)
+{
+  // When starting the debugger, we:
+  //   1. fork()
+  //   2. In the parent, enter an infinite loop. (The debugger can
+  //      break us out of the loop.)
+  //   3. In the child, spawn a debugger and attach it to the
+  //      parent.
+  (void) p;
     
-  /// We override libc's "abort()" so that we can trigger the JIT
-  /// debugger then.
-  void abort(void) {
-    std::cout << "\n\nabort()\n\n\n";
-    gdbNaoPlz(1);
+  int f = fork();
+
+  if(f == 0) {
+    // Child. Spawn the debugger.
+    execDebugger();
+  }
+  else if(f > 0) {
+    // Enter an infinite loop. 'cont' is volatile so that the
+    // debugger can change it and the loop will break.
+    volatile bool cont = false;
+    while(!cont)
+      ;
+    return;
+  }
+  else {
+    std::cerr << "There was an error calling fork\n";
     exit(1);
   }
 
-  /// This gets called behind the scenes by glic's 'assert()' macro
-  /// when it fails. We override it so we can trigger the debugger.
-  void __assert_fail(const char* assertion,
-		     const char * file,
-		     unsigned int line,
-		     const char* function)
-  {
-    (void) assertion;
-    (void) file;
-    (void) line;
-    (void) function;
-    abort();
-  }
-    
-
-  static void gdbNaoPlz(int p)
-  {
-    // When starting the debugger, we:
-    //   1. fork()
-    //   2. In the parent, enter an infinite loop. (The debugger can
-    //      break us out of the loop.)
-    //   3. In the child, spawn a debugger and attach it to the
-    //      parent.
-    (void) p;
-    
-    int f = fork();
-
-    if(f == 0) {
-      // Child. Spawn the debugger.
-      execDebugger();
-    }
-    else if(f > 0) {
-      // Enter an infinite loop. 'cont' is volatile so that the
-      // debugger can change it and the loop will break.
-      volatile bool cont = false;
-      while(!cont)
-        ;
-      return;
-    }
-    else {
-      std::cerr << "There was an error calling fork\n";
-      exit(1);
-    }
-
-    std::cout << "Version with f=" << f << " reached the end...\n";
-    exit(1);
-  }
-
-
-  /// Install all the signal handlers we need.
-  static void install()
-  {
-    sigset_t blocked;
-    sigemptyset(&blocked);
-    sigaddset(&blocked, SIGSTKFLT);
-    sigaddset(&blocked, SIGSEGV);
-    sigaddset(&blocked, SIGTRAP);
-    sigaddset(&blocked, SIGILL);
-    sigaddset(&blocked, SIGBUS);
-    sigaddset(&blocked, SIGFPE);
-
-    struct sigaction sa;
-    sa.sa_handler = gdbNaoPlz;
-    sa.sa_mask = blocked;
-    sa.sa_flags = SA_RESTART;
-
-    sigaction(SIGSTKFLT, &sa, NULL);
-    sigaction(SIGSEGV, &sa, NULL);
-    sigaction(SIGTRAP, &sa, NULL);
-    sigaction(SIGILL, &sa, NULL);
-    sigaction(SIGBUS, &sa, NULL);
-    sigaction(SIGFPE, &sa, NULL);
-
-    //sa.sa_handler = child_exitend;
-    //sa.sa_mask = SA_RESTART | SA_NOCLDSTOP;
-    // sigaction(SIGCHLD, &sa, NULL);
-  }
+  std::cout << "Version with f=" << f << " reached the end...\n";
+  exit(1);
 }
 
+
+/// Install all the signal handlers we need.
+static void install()
+{
+  sigset_t blocked;
+  sigemptyset(&blocked);
+  sigaddset(&blocked, SIGSTKFLT);
+  sigaddset(&blocked, SIGSEGV);
+  sigaddset(&blocked, SIGTRAP);
+  sigaddset(&blocked, SIGILL);
+  sigaddset(&blocked, SIGBUS);
+  sigaddset(&blocked, SIGFPE);
+
+  struct sigaction sa;
+  sa.sa_handler = gdbNaoPlz;
+  sa.sa_mask = blocked;
+  sa.sa_flags = SA_RESTART;
+
+  sigaction(SIGSTKFLT, &sa, NULL);
+  sigaction(SIGSEGV, &sa, NULL);
+  sigaction(SIGTRAP, &sa, NULL);
+  sigaction(SIGILL, &sa, NULL);
+  sigaction(SIGBUS, &sa, NULL);
+  sigaction(SIGFPE, &sa, NULL);
+
+  //sa.sa_handler = child_exitend;
+  //sa.sa_mask = SA_RESTART | SA_NOCLDSTOP;
+  // sigaction(SIGCHLD, &sa, NULL);
+}
 
 static void execDebugger()
 {
@@ -151,3 +122,32 @@ static void execDebugger()
 
 /// Call install() to set up all signal handlers.
 static ConstructorRunner r(install);
+
+
+///////////////////////////////////////
+// Exported functions
+///////////////////////////////////////
+
+extern "C" {
+  /// We override libc's "abort()" so that we can trigger the JIT
+  /// debugger then.
+  void abort(void) {
+    std::cout << "\n\nabort()\n\n\n";
+    gdbNaoPlz(1);
+    exit(1);
+  }
+
+  /// This gets called behind the scenes by glic's 'assert()' macro
+  /// when it fails. We override it so we can trigger the debugger.
+  void __assert_fail(const char* assertion,
+		     const char * file,
+		     unsigned int line,
+		     const char* function)
+  {
+    (void) assertion;
+    (void) file;
+    (void) line;
+    (void) function;
+    abort();
+  }
+}   
