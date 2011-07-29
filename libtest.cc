@@ -6,8 +6,26 @@
 #include <cstdlib>
 #include <sys/wait.h>
 
+// TODOs: - rename h()
+//        - move the exename buffer to static area
+//        - figure out how big the exename buffer should be
+//        - make constants for both buffer lengths
+//        - break out 'start_debugger()' function
+//        - figure out how to call real abort() and replace exit(1)s
+//          with that
+//        - make functions static
+
 using namespace std;
 
+/// You can make an instance of this class and pass a nullary function
+/// (or function-like object) as a constructor parameter and it will
+/// call that function for you. Intended to be used for global/static
+/// variables, so that those functions are called at static
+/// initialization time.
+///
+/// This is because I didn't know about GCC's
+/// "__attribute__((constructor))", but I'll leave it so that the code
+/// is more portable.
 struct ConstructorRunner
 {
   template<typename T_FN>
@@ -16,16 +34,26 @@ struct ConstructorRunner
   }    
 };
 
+
 extern "C" {
+  /// This function gets called when the library determines that it
+  /// should spawn GDB.
   void h(int);
     
+  /// We override libc's "abort()" so that we can trigger the JIT
+  /// debugger then.
   void abort(void) {
     std::cout << "\n\nabort()\n\n\n";
     h(1);
     exit(1);
   }
 
-  void __assert_fail(const char* assertion, const char * file, unsigned int line, const char* function)
+  /// This gets called behind the scenes by glic's 'assert()' macro
+  /// when it fails. We override it so we can trigger the debugger.
+  void __assert_fail(const char* assertion,
+		     const char * file,
+		     unsigned int line,
+		     const char* function)
   {
     (void) assertion;
     (void) file;
@@ -34,13 +62,21 @@ extern "C" {
     abort();
   }
     
+
   void h(int p)
   {
+    // When starting the debugger, we:
+    //   1. fork()
+    //   2. In the parent, enter an infinite loop. (The debugger can
+    //      break us out of the loop.)
+    //   3. In the child, spawn a debugger and attach it to the
+    //      parent.
     (void) p;
     
     int f = fork();
 
     if(f == 0) {
+      // Child. Spawn the debugger.
       char exename[100] = {0};
       char pid[10] = {0};
       int pidn= getppid();
@@ -54,19 +90,14 @@ extern "C" {
       snprintf(exename, 100, "/proc/%d/exe", pidn);
       snprintf(pid, 10, "%d", pidn);
 
-      //char * const args[4] = {
-      //  debugger,
-      //  exename,
-      //  pid,
-      //  0,
-      //};
-
       execlp(debugger, debugger, exename, pid, (char*)NULL);
 
       perror("Error");
       exit(1);
     }
     else if(f > 0) {
+      // Enter an infinite loop. 'cont' is volatile so that the
+      // debugger can change it and the loop will break.
       volatile bool cont = false;
       while(!cont)
         ;
@@ -81,6 +112,8 @@ extern "C" {
     exit(1);
   }
 
+
+  /// Install all the signal handlers we need.
   void install()
   {
     sigset_t blocked;
@@ -110,4 +143,6 @@ extern "C" {
   }
 }
 
+
+/// Call install() to set up all signal handlers.
 ConstructorRunner r(install);
