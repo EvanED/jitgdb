@@ -5,6 +5,8 @@
 
 using namespace std;
 
+const char* foo() { return "foo"; }
+
 void breakpoint() {
   kill(getpid(), SIGTRAP);
 }
