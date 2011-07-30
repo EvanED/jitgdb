@@ -1,0 +1,111 @@
+LIBJITDB(3)
+===========
+:doctype: manpage
+
+
+NAME
+----
+libjitdb
+
+
+SYNOPSIS
+--------
+A *LD_PRELOAD* library for doing JIT (on-demand) debugging, a la Windows.
+
+
+DESCRIPTION
+-----------
+This library pulls a bunch of nasty hackery so that if a process
+running into it encounters an *abort()*-able condition (see below), it
+will automatically start a debugger and attach it to the ill-behaved
+process.
+
+To use, do the following:
+1. Set the *JITDEBUG_EXE* environment variable to be the executable
+   name of the debugger to execute (e.g. *gdb*). The command
+   *$*'JITDEBUG_EXE' 'EXE' 'PID' should be valid and will start the
+   debugger, attaching it to process number 'PID' (which should b
+   estarted with the image 'EXE'). This is true of GDB.
+2. Set the *LD_PRELOAD* environment variable to point to the
+   *libjitdb.so* library.
+3. Run your program as normal.
+
+If your process should require debugging and the debugger breaks in,
+you can use the debugger to change the value of the *cont* variable in
+the deepest stack frame to *true*; the process will then execute a
+return. How useful the state will be after this point depends on your
+program and the reason for the break.
+
+(Note: the use of *cont* in this way is one reason that this library
+should probably not be compiled with optimization, and should always
+be compiled with debugging information. The variable is marked as
+*volatile* so it can't be optimized out, but it's probably not a good
+idea anyway.)
+
+
+ABORTABLE CONDITIONS
+--------------------
+The list of conditions which will cause a break is as follows:
+
+1. The process calls *abort()*.
+2. The process calls *__assert_fail()*. (This is an implementation
+   detail of the *assert()* macro, but it seems to work.
+3. The process receives one of the following signals:
+    ** STKFLT
+    ** SEGV
+    ** TRAP
+    ** ILL
+    ** BUS
+    ** FPE
+
+*libjitdb* uses the standard mechanisms to register signal handlers,
+so the signals in #3 can be overridden if the target process registers
+its own handler. (*libjitdb* currently makes no attempt to restore its
+own handlers if the process unregisters them, though theoretically
+this could change in the future.)
+
+You may find it useful to deliberately trigger one of these conditions
+in your code to use as a breakpoint.
+
+
+BUGS & TODO
+-----------
+
+So while I'm not aware of any bugs per se, the mechanisms used by
+*libjitdb* seem like they're probably pretty fragile. (*fork()*ing in
+a signal handler for a segfault? Yeah, I'm sure that works really well
+in every possible situation.)
+
+I did make some effort to improve the chances that *libjitdb* will
+work in strange situations -- for instance, it does as little as
+possible when triggered, and in particular does not dynamically
+allocate memory. (This is at least true until it has detected a
+problem that will prevent it from starting the debugger. If there is a
+problem -- *$JITDEBUG_EXE* is not set or there is a problem calling
+*fork()* or *exec()* -- then it attempts to write out an error message
+and all bets are off.)
+
+
+There are a few things I'd like to improve. For instance, I'd like to
+make it so that you can configure the signals that *libjitdb* will
+catch or the functions it overrides by writing a *.jitdebug* file or
+similar.
+
+I've also thought about providing a daemon that will do the actual
+spawning of the debugger. This would place fewer restrictions on what
+the library could do when there is a problem, and decrease the amount
+of work that has to be performed within the defunct process.
+
+Finally, I have no clue how portable this is -- whether it will work
+on different Unices I have no clue.
+
+
+AUTHOR
+------
+*libjitdb* was written by Evan Driscoll.
+
+
+COPYING
+-------
+Copyright \(C) 2011 Evan Driscoll. Free use of this software is
+granted under the terms of the GNU Public License (GPL) version 3.
