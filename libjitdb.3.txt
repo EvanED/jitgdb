@@ -85,6 +85,12 @@ problem -- *$JITDEBUG_EXE* is not set or there is a problem calling
 *fork()* or *exec()* -- then it attempts to write out an error message
 and all bets are off.)
 
+Please report any problems you encounter to *driscoll@cs.wisc.edu*
+or the Github repository
+*https://www.github.com/EvanED/demux*. (Feature requests are welcome
+too, but may not be acted upon. Feature requests with patches are even
+better. :-))
+
 
 There are a few things I'd like to improve. For instance, I'd like to
 make it so that you can configure the signals that *libjitdb* will
