@@ -114,4 +114,5 @@ AUTHOR
 COPYING
 -------
 Copyright \(C) 2011 Evan Driscoll. Free use of this software is
-granted under the terms of the GNU Public License (GPL) version 3.
+granted under the terms of the GNU General Public License (GPL)
+version 3 (see LICENSE.txt).
