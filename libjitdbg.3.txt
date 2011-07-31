@@ -5,7 +5,7 @@ LIBJITDBG(3)
 
 NAME
 ----
-libjitdbg
+libjitdbg - Just-in-time debugging for Linux
 
 
 SYNOPSIS
@@ -21,11 +21,12 @@ will automatically start a debugger and attach it to the ill-behaved
 process.
 
 To use, do the following:
+
 1. Set the *JITDEBUG_EXE* environment variable to be the executable
    name of the debugger to execute (e.g. *gdb*). The command
-   *$*'JITDEBUG_EXE' 'EXE' 'PID' should be valid and will start the
-   debugger, attaching it to process number 'PID' (which should b
-   estarted with the image 'EXE'). This is true of GDB.
+   "*$*'JITDEBUG_EXE' 'EXE' 'PID'" should be valid and will start the
+   debugger, attaching it to process number 'PID' (which should be
+   started with the image 'EXE'). This is true of GDB.
 2. Set the *LD_PRELOAD* environment variable to point to the
    *libjitdbg.so* library.
 3. Run your program as normal.
@@ -51,12 +52,12 @@ The list of conditions which will cause a break is as follows:
 2. The process calls *__assert_fail()*. (This is an implementation
    detail of the *assert()* macro, but it seems to work.)
 3. The process receives one of the following signals:
-    ** STKFLT
-    ** SEGV
-    ** TRAP
-    ** ILL
-    ** BUS
-    ** FPE
+   STKFLT,
+   SEGV,
+   TRAP,
+   ILL,
+   BUS, and
+   FPE.
 
 *libjitdbg* uses the standard mechanisms to register signal handlers,
 so the signals in #3 can be overridden if the target process registers
@@ -72,7 +73,7 @@ BUGS & TODO
 -----------
 
 So while I'm not aware of any bugs per se, the mechanisms used by
-*libjitdbg* seem like they're probably pretty fragile. (*fork()*ing in
+*libjitdbg* seem like they're probably pretty fragile. (**fork()**ing in
 a signal handler for a segfault? Yeah, I'm sure that works really well
 in every possible situation.)
 
@@ -87,7 +88,7 @@ and all bets are off.)
 
 Please report any problems you encounter to *driscoll@cs.wisc.edu*
 or the Github repository
-*https://www.github.com/EvanED/demux*. (Feature requests are welcome
+*https://www.github.com/EvanED/libjitdbg*. (Feature requests are welcome
 too, but may not be acted upon. Feature requests with patches are even
 better. :-))
 
