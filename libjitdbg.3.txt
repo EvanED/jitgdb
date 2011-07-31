@@ -62,7 +62,7 @@ The list of conditions which will cause a break is as follows:
 *libjitdbg* uses the standard mechanisms to register signal handlers,
 so the signals in #3 can be overridden if the target process registers
 its own handler. (*libjitdbg* currently makes no attempt to restore its
-own handlers if the process unregisters them, though theoretically
+own handlers if the process deregisters them, though theoretically
 this could change in the future.)
 
 You may find it useful to deliberately trigger one of these conditions
