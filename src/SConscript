@@ -1,0 +1,7 @@
+Import('env')
+
+lib = env.SharedLibrary('jitdbg', 'libjitdbg.cc')
+
+assert len(lib) == 1
+env['LIBJITDBG']=lib[0]
+Return('lib')

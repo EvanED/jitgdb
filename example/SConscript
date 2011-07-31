@@ -1,0 +1,9 @@
+Import('env')
+
+env = env.Clone()
+
+env.AppendUnique(LIBS=env['LIBJITDBG'], RPATH=r'\$ORIGIN/../lib')
+
+demo = env.Program('demo', 'demo.cc')
+
+Return('demo')
