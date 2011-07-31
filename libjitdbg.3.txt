@@ -1,11 +1,11 @@
-LIBJITDB(3)
+LIBJITDBG(3)
 ===========
 :doctype: manpage
 
 
 NAME
 ----
-libjitdb
+libjitdbg
 
 
 SYNOPSIS
@@ -27,7 +27,7 @@ To use, do the following:
    debugger, attaching it to process number 'PID' (which should b
    estarted with the image 'EXE'). This is true of GDB.
 2. Set the *LD_PRELOAD* environment variable to point to the
-   *libjitdb.so* library.
+   *libjitdbg.so* library.
 3. Run your program as normal.
 
 If your process should require debugging and the debugger breaks in,
@@ -49,7 +49,7 @@ The list of conditions which will cause a break is as follows:
 
 1. The process calls *abort()*.
 2. The process calls *__assert_fail()*. (This is an implementation
-   detail of the *assert()* macro, but it seems to work.
+   detail of the *assert()* macro, but it seems to work.)
 3. The process receives one of the following signals:
     ** STKFLT
     ** SEGV
@@ -58,9 +58,9 @@ The list of conditions which will cause a break is as follows:
     ** BUS
     ** FPE
 
-*libjitdb* uses the standard mechanisms to register signal handlers,
+*libjitdbg* uses the standard mechanisms to register signal handlers,
 so the signals in #3 can be overridden if the target process registers
-its own handler. (*libjitdb* currently makes no attempt to restore its
+its own handler. (*libjitdbg* currently makes no attempt to restore its
 own handlers if the process unregisters them, though theoretically
 this could change in the future.)
 
@@ -72,11 +72,11 @@ BUGS & TODO
 -----------
 
 So while I'm not aware of any bugs per se, the mechanisms used by
-*libjitdb* seem like they're probably pretty fragile. (*fork()*ing in
+*libjitdbg* seem like they're probably pretty fragile. (*fork()*ing in
 a signal handler for a segfault? Yeah, I'm sure that works really well
 in every possible situation.)
 
-I did make some effort to improve the chances that *libjitdb* will
+I did make some effort to improve the chances that *libjitdbg* will
 work in strange situations -- for instance, it does as little as
 possible when triggered, and in particular does not dynamically
 allocate memory. (This is at least true until it has detected a
@@ -93,7 +93,7 @@ better. :-))
 
 
 There are a few things I'd like to improve. For instance, I'd like to
-make it so that you can configure the signals that *libjitdb* will
+make it so that you can configure the signals that *libjitdbg* will
 catch or the functions it overrides by writing a *.jitdebug* file or
 similar.
 
@@ -108,7 +108,7 @@ on different Unices I have no clue.
 
 AUTHOR
 ------
-*libjitdb* was written by Evan Driscoll.
+*libjitdbg* was written by Evan Driscoll.
 
 
 COPYING
