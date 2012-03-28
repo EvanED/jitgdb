@@ -1,0 +1,151 @@
+'\" t
+.\"     Title: libjitdbg
+.\"    Author: [see the "AUTHOR" section]
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 07/30/2011
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "LIBJITDBG" "3" "07/30/2011" "\ \&" "\ \&"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+libjitdbg \- Just\-in\-time debugging for Linux
+.SH "SYNOPSIS"
+.sp
+A \fBLD_PRELOAD\fR library for doing JIT (on\-demand) debugging, a la Windows\&.
+.SH "DESCRIPTION"
+.sp
+This library pulls a bunch of nasty hackery so that if a process running into it encounters an \fBabort()\fR\-able condition (see below), it will automatically start a debugger and attach it to the ill\-behaved process\&.
+.sp
+To use, do the following:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+Set the
+\fBJITDEBUG_EXE\fR
+environment variable to be the executable name of the debugger to execute (e\&.g\&.
+\fBgdb\fR)\&. The command "\fB$\fR\fIJITDEBUG_EXE\fR
+\fIEXE\fR
+\fIPID\fR" should be valid and will start the debugger, attaching it to process number
+\fIPID\fR
+(which should b estarted with the image
+\fIEXE\fR)\&. This is true of GDB\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Set the
+\fBLD_PRELOAD\fR
+environment variable to point to the
+\fBlibjitdbg\&.so\fR
+library\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+Run your program as normal\&.
+.RE
+.sp
+If your process should require debugging and the debugger breaks in, you can use the debugger to change the value of the \fBcont\fR variable in the deepest stack frame to \fBtrue\fR; the process will then execute a return\&. How useful the state will be after this point depends on your program and the reason for the break\&.
+.sp
+(Note: the use of \fBcont\fR in this way is one reason that this library should probably not be compiled with optimization, and should always be compiled with debugging information\&. The variable is marked as \fBvolatile\fR so it can\(cqt be optimized out, but it\(cqs probably not a good idea anyway\&.)
+.SH "ABORTABLE CONDITIONS"
+.sp
+The list of conditions which will cause a break is as follows:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+The process calls
+\fBabort()\fR\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+The process calls
+\fB__assert_fail()\fR\&. (This is an implementation detail of the
+\fBassert()\fR
+macro, but it seems to work\&.)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+The process receives one of the following signals: STKFLT, SEGV, TRAP, ILL, BUS, and FPE\&.
+.RE
+.sp
+\fBlibjitdbg\fR uses the standard mechanisms to register signal handlers, so the signals in #3 can be overridden if the target process registers its own handler\&. (\fBlibjitdbg\fR currently makes no attempt to restore its own handlers if the process unregisters them, though theoretically this could change in the future\&.)
+.sp
+You may find it useful to deliberately trigger one of these conditions in your code to use as a breakpoint\&.
+.SH "BUGS & TODO"
+.sp
+So while I\(cqm not aware of any bugs per se, the mechanisms used by \fBlibjitdbg\fR seem like they\(cqre probably pretty fragile\&. (\fBfork()\fRing in a signal handler for a segfault? Yeah, I\(cqm sure that works really well in every possible situation\&.)
+.sp
+I did make some effort to improve the chances that \fBlibjitdbg\fR will work in strange situations \(em for instance, it does as little as possible when triggered, and in particular does not dynamically allocate memory\&. (This is at least true until it has detected a problem that will prevent it from starting the debugger\&. If there is a problem \(em \fB$JITDEBUG_EXE\fR is not set or there is a problem calling \fBfork()\fR or \fBexec()\fR \(em then it attempts to write out an error message and all bets are off\&.)
+.sp
+Please report any problems you encounter to \fBdriscoll@cs\&.wisc\&.edu\fR or the Github repository \fBhttps://www\&.github\&.com/EvanED/libjitdbg\fR\&. (Feature requests are welcome too, but may not be acted upon\&. Feature requests with patches are even better\&. :\-))
+.sp
+There are a few things I\(cqd like to improve\&. For instance, I\(cqd like to make it so that you can configure the signals that \fBlibjitdbg\fR will catch or the functions it overrides by writing a \fB\&.jitdebug\fR file or similar\&.
+.sp
+I\(cqve also thought about providing a daemon that will do the actual spawning of the debugger\&. This would place fewer restrictions on what the library could do when there is a problem, and decrease the amount of work that has to be performed within the defunct process\&.
+.sp
+Finally, I have no clue how portable this is \(em whether it will work on different Unices I have no clue\&.
+.SH "AUTHOR"
+.sp
+\fBlibjitdbg\fR was written by Evan Driscoll\&.
+.SH "COPYING"
+.sp
+Copyright (C) 2011 Evan Driscoll\&. Free use of this software is granted under the terms of the GNU General Public License (GPL) version 3 (see LICENSE\&.txt)\&.
