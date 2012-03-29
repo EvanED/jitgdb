@@ -3,7 +3,7 @@ libjitdbg (aka gdbnaoplz)
 
 Inspired by the "[jist-in-time
 debugging](http://msdn.microsoft.com/en-us/library/5hs4b7a6.aspx)" support in
-Windows, I wanted something similar for Linux. (It's not useful /all/ that
+Windows, I wanted something similar for Linux. (It's not useful *all* that
 often, but it is nice every now and again.)
 
 This library is my attempt at achieving this. It is intended to be used as an
