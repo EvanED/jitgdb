@@ -36,4 +36,5 @@ To run some command using `libjitdbg`, just run
 want to run multiple such commands, you can always `export
 LD_PRELOAD=/path/to/libjitdbg/lib/libjitdbg.so` and then do stuff.
 
-Be sure to read the caveats in the manpage!
+Be sure to read the caveats in the manpage! (You can view it with, e.g.,
+`less`.)
