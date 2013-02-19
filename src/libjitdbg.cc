@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <cstdlib>
+#include <cstdio>
 #include <sys/wait.h>
 
 // TODOs: - figure out how big the exename buffer should be
